@@ -1,0 +1,57 @@
+@font-face {
+  font-family: Galmuri11;
+  font-weight: 400;
+  font-display: swap;
+  src: url('galmuri/dist/Galmuri11.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: Galmuri11;
+  font-weight: 700;
+  font-display: swap;
+  src: url('galmuri/dist/Galmuri11-Bold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: GalmuriMono11;
+  font-weight: 400;
+  font-display: swap;
+  src: url('galmuri/dist/GalmuriMono11.woff2') format('woff2');
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: light;
+  font-synthesis: none;
+  --desk: #2b3a67;
+  --desk-dot: #3a4b82;
+  --foreground: #1c1b18;
+  --font-ui: Galmuri11, 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+  --font-mono: GalmuriMono11, Galmuri11, Consolas, monospace;
+}
+
+body {
+  min-height: 100vh;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  background-color: var(--desk);
+  background-image: radial-gradient(var(--desk-dot) 1px, transparent 1.5px);
+  background-size: 8px 8px;
+  color: var(--foreground);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
