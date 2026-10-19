@@ -266,6 +266,37 @@
   line-height: 1.7;
 }
 
+.prompt-meta {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  align-items: baseline;
+  margin-top: 8px;
+}
+
+.prompt-error {
+  margin-right: auto;
+  color: var(--danger);
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.prompt-counter {
+  flex: 0 0 auto;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.prompt-counter--over {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.prompt-textarea[aria-invalid='true'] {
+  box-shadow: var(--sunken), inset 0 0 0 3px var(--danger);
+}
+
 .prompt-textarea::placeholder {
   color: #8d897b;
 }

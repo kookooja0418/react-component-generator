@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { validatePrompt, MAX_PROMPT_LENGTH } from '../utils/validatePrompt';
 
 interface PromptInputProps {
   onGenerate: (prompt: string) => void;
@@ -16,10 +17,11 @@ const EXAMPLES = [
 
 export function PromptInput({ onGenerate, isLoading }: PromptInputProps) {
   const [prompt, setPrompt] = useState('');
+  const validation = validatePrompt(prompt);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (prompt.trim() && !isLoading) {
+    if (prompt.trim() && validation.valid && !isLoading) {
       onGenerate(prompt.trim());
     }
   };
@@ -35,6 +37,8 @@ export function PromptInput({ onGenerate, isLoading }: PromptInputProps) {
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           aria-label="만들고 싶은 컴포넌트"
+          aria-invalid={!validation.valid}
+          aria-describedby="prompt-counter"
           placeholder="예: 고객 목록 테이블 위에 들어갈 검색 필터 바를 만들어줘. 상태, 담당자, 날짜 범위 필터가 필요해."
           className="prompt-textarea"
           rows={3}
@@ -47,7 +51,7 @@ export function PromptInput({ onGenerate, isLoading }: PromptInputProps) {
         <button
           type="submit"
           className="btn-generate"
-          disabled={!prompt.trim() || isLoading}
+          disabled={!prompt.trim() || !validation.valid || isLoading}
         >
           {isLoading ? (
             <span className="loading-spinner">생성 중...</span>
@@ -56,6 +60,19 @@ export function PromptInput({ onGenerate, isLoading }: PromptInputProps) {
           )}
         </button>
       </form>
+      <div className="prompt-meta">
+        {validation.error && (
+          <p className="prompt-error" role="alert">
+            {validation.error}
+          </p>
+        )}
+        <span
+          id="prompt-counter"
+          className={`prompt-counter ${validation.valid ? '' : 'prompt-counter--over'}`}
+        >
+          {validation.length} / {MAX_PROMPT_LENGTH}
+        </span>
+      </div>
       <div className="prompt-examples">
         <span className="examples-label">예시 프롬프트</span>
         {EXAMPLES.map((example) => (
