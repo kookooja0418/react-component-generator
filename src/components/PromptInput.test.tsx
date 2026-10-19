@@ -27,6 +27,25 @@ describe('PromptInput', () => {
     expect(screen.getByRole('button', { name: '생성 중...' })).toBeDisabled();
   });
 
+  describe('히스토리', () => {
+    it('히스토리가 없으면 최근 프롬프트 영역을 보여주지 않는다', () => {
+      render(<PromptInput onGenerate={vi.fn()} isLoading={false} />);
+      expect(screen.queryByText('최근 프롬프트')).not.toBeInTheDocument();
+    });
+
+    it('히스토리 항목을 버튼으로 보여준다', () => {
+      render(<PromptInput onGenerate={vi.fn()} isLoading={false} history={['프로필 카드']} />);
+      expect(screen.getByRole('button', { name: '프로필 카드' })).toBeInTheDocument();
+    });
+
+    it('히스토리 항목을 누르면 입력창에 채워진다', async () => {
+      const user = userEvent.setup();
+      render(<PromptInput onGenerate={vi.fn()} isLoading={false} history={['프로필 카드']} />);
+      await user.click(screen.getByRole('button', { name: '프로필 카드' }));
+      expect(screen.getByRole('textbox')).toHaveValue('프로필 카드');
+    });
+  });
+
   describe('길이 제한', () => {
     const typeLong = (length: number) =>
       fireEvent.change(screen.getByRole('textbox'), { target: { value: '가'.repeat(length) } });
