@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PromptInput } from './components/PromptInput';
 import { ComponentCard } from './components/ComponentCard';
+import { StreamingCard } from './components/StreamingCard';
 import { useComponentGenerator } from './hooks/useComponentGenerator';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { addToHistory } from './utils/promptHistory';
@@ -40,8 +41,16 @@ function App() {
     anthropic: false,
     google: false,
   });
-  const { components, isLoading, error, generate, removeComponent, clearAll } =
-    useComponentGenerator();
+  const {
+    components,
+    isLoading,
+    error,
+    streamingCode,
+    streamingPrompt,
+    generate,
+    removeComponent,
+    clearAll,
+  } = useComponentGenerator();
 
   useEffect(() => {
     fetch('/api/config')
@@ -148,7 +157,7 @@ function App() {
       )}
 
       <section className="results-section">
-        {components.length > 0 && (
+        {(components.length > 0 || isLoading) && (
           <div className="results-header">
             <h2>생성된 컴포넌트 {components.length}개</h2>
             <button className="btn-clear" onClick={clearAll}>
@@ -178,23 +187,10 @@ function App() {
           </div>
         )}
 
-        {isLoading && (
-          <div className="window loading-card" role="status">
-            <div className="titlebar">
-              <h2>생성 중</h2>
-            </div>
-            <div className="window-body">
-              <p>컴포넌트를 생성하고 있습니다...</p>
-              <div className="progress" aria-hidden="true">
-                {Array.from({ length: 16 }, (_, i) => (
-                  <i key={i} style={{ animationDelay: `${i * 0.12}s` }} />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="results-grid">
+          {streamingCode !== null && (
+            <StreamingCard prompt={streamingPrompt ?? ''} code={streamingCode} />
+          )}
           {components.map((component) => (
             <ComponentCard
               key={component.id}
