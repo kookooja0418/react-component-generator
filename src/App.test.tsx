@@ -3,19 +3,49 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 
+const encoder = new TextEncoder();
+const line = (event: object) => encoder.encode(`${JSON.stringify(event)}\n`);
+
 const stubFetch = () =>
   vi.stubGlobal(
     'fetch',
     vi.fn((url: string) =>
-      Promise.resolve({
-        ok: true,
-        json: async () =>
-          url === '/api/config'
-            ? { envKeys: { anthropic: false, google: false } }
-            : { code: 'render(<p/>)' },
-      }),
+      Promise.resolve(
+        url === '/api/config'
+          ? { ok: true, json: async () => ({ envKeys: { anthropic: false, google: false } }) }
+          : {
+              ok: true,
+              body: new ReadableStream<Uint8Array>({
+                start(controller) {
+                  controller.enqueue(line({ type: 'delta', text: 'render(<p/>)' }));
+                  controller.enqueue(line({ type: 'done', code: 'render(<p/>)' }));
+                  controller.close();
+                },
+              }),
+            },
+      ),
     ),
   );
+
+// 스트림을 직접 제어해 생성 도중 상태를 관찰한다.
+const stubOpenStream = () => {
+  let controller!: ReadableStreamDefaultController<Uint8Array>;
+  const body = new ReadableStream<Uint8Array>({ start: (c) => { controller = c; } });
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((url: string) =>
+      Promise.resolve(
+        url === '/api/config'
+          ? { ok: true, json: async () => ({ envKeys: { anthropic: false, google: false } }) }
+          : { ok: true, body },
+      ),
+    ),
+  );
+  return {
+    send: (event: object) => controller.enqueue(line(event)),
+    close: () => controller.close(),
+  };
+};
 
 describe('App 상태 저장', () => {
   beforeEach(() => {
@@ -70,5 +100,39 @@ describe('App 상태 저장', () => {
     unmount();
     render(<App />);
     expect(screen.getByRole('button', { name: '프로필 카드' })).toBeInTheDocument();
+  });
+});
+
+describe('App 스트리밍', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    localStorage.setItem('rcg:apiKey', JSON.stringify('AIza-saved'));
+  });
+
+  const startGenerate = async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByRole('textbox', { name: '만들고 싶은 컴포넌트' }), '버튼');
+    await user.click(screen.getByRole('button', { name: '컴포넌트 생성' }));
+  };
+
+  it('생성 중에는 코드 탭에서 받은 코드를 실시간으로 보여준다', async () => {
+    const stream = stubOpenStream();
+    await startGenerate();
+    stream.send({ type: 'delta', text: 'const Btn = () => null;' });
+    expect(await screen.findByText('const Btn = () => null;')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '코드' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('생성이 끝나면 미리보기 탭으로 전환된다', async () => {
+    const stream = stubOpenStream();
+    await startGenerate();
+    stream.send({ type: 'delta', text: 'render(<p/>)' });
+    stream.send({ type: 'done', code: 'render(<p/>)' });
+    stream.close();
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: '미리보기' })).toHaveAttribute('aria-selected', 'true');
+    });
+    expect(screen.getByRole('tab', { name: '미리보기' })).toBeEnabled();
   });
 });
